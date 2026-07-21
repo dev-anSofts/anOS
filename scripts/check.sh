@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EFI_FILE="$ROOT_DIR/build/BOOTX64.EFI"
-IMAGE_FILE="$ROOT_DIR/build/anOS-1.0.img"
+IMAGE_FILE="$ROOT_DIR/build/anOS-1.1.img"
 
 [[ -f "$EFI_FILE" ]] || { echo "Manca $EFI_FILE: esegui make" >&2; exit 1; }
 [[ -f "$IMAGE_FILE" ]] || { echo "Manca $IMAGE_FILE: esegui make" >&2; exit 1; }
@@ -16,4 +16,3 @@ if command -v objdump >/dev/null 2>&1; then
 fi
 
 echo "Controlli statici completati. Per il test completo: make run"
-

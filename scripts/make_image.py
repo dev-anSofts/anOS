@@ -30,7 +30,7 @@ def directory_entry(name: bytes, attributes: int, cluster: int, size: int = 0) -
 
 def main() -> int:
     if len(sys.argv) != 3:
-        print(f"Uso: {sys.argv[0]} BOOTX64.EFI anOS-1.0.img", file=sys.stderr)
+        print(f"Uso: {sys.argv[0]} BOOTX64.EFI anOS-1.1.img", file=sys.stderr)
         return 2
 
     efi_path = pathlib.Path(sys.argv[1])
@@ -156,4 +156,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

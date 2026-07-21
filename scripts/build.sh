@@ -27,6 +27,7 @@ clang++ \
     -fshort-wchar \
     -mno-red-zone \
     -mno-stack-arg-probe \
+    -mgeneral-regs-only \
     -Wall -Wextra -Wpedantic -Werror \
     -c "$ROOT_DIR/src/kernel.cpp" \
     -o "$BUILD_DIR/kernel.obj"
@@ -42,9 +43,9 @@ lld-link \
 
 cp "$EFI_FILE" "$ESP_DIR/EFI/BOOT/BOOTX64.EFI"
 
-IMAGE_FILE="$BUILD_DIR/anOS-1.0.img"
+IMAGE_FILE="$BUILD_DIR/anOS-1.1.img"
 python3 "$ROOT_DIR/scripts/make_image.py" "$EFI_FILE" "$IMAGE_FILE"
 
-echo "anOS 1.0 compilato con successo"
+echo "anOS 1.1 compilato con successo"
 echo "EFI: $EFI_FILE"
 echo "Immagine avviabile: $IMAGE_FILE"

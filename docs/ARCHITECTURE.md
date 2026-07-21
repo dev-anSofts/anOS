@@ -1,33 +1,50 @@
-# Architettura di anOS 1.0
+# Architettura di anOS 1.1
+
+## Sequenza di boot
+
+1. UEFI carica `EFI/BOOT/BOOTX64.EFI`.
+2. Il bootstrap acquisisce Graphics Output Protocol e memory map.
+3. `ExitBootServices()` trasferisce il controllo completo ad anOS.
+4. Il kernel inizializza framebuffer e console.
+5. Installa una IDT x86-64 con interrupt gate.
+6. Rimappa il PIC e programma il PIT a 100 Hz.
+7. Configura il controller PS/2 e abilita gli interrupt.
+8. Avvia il loop della shell usando `hlt` tra un interrupt e l'altro.
+
+## Interrupt
+
+| Vettore | Sorgente | Handler |
+| --- | --- | --- |
+| 32 | IRQ0 / PIT | Incrementa il contatore monotono |
+| 33 | IRQ1 / PS/2 | Traduce scancode e alimenta il ring buffer |
+
+Gli handler sono compilati con soli registri generali e terminano tramite
+`iretq`. Il lavoro grafico non viene svolto dentro l'IRQ: l'handler deposita il
+carattere in un buffer SPSC e la shell lo consuma nel contesto principale.
 
 ## Confine freestanding
 
-`BOOTX64.EFI` viene caricato dal firmware UEFI. La fase iniziale individua il
-Graphics Output Protocol, copia i dati del framebuffer, ottiene la mappa della
-memoria e invoca `ExitBootServices()`.
-
-Dopo il successo di `ExitBootServices()`:
-
-- non vengono più chiamati servizi di boot UEFI;
-- il framebuffer è scritto direttamente dal kernel;
-- il log usa direttamente la porta seriale COM1;
-- nessuna libreria o syscall di Windows/Linux è collegata;
-- la CPU viene arrestata con istruzioni x86-64 `cli` e `hlt`.
+- nessuna libreria standard o syscall host;
+- IDT, PIC, PIT e PS/2 sono gestiti direttamente;
+- il framebuffer è scritto dal kernel;
+- la seriale COM1 usa I/O port-mapped;
+- attesa a basso consumo tramite istruzione `hlt`;
+- compilazione con `-ffreestanding`, `-nostdlib`, senza eccezioni e RTTI.
 
 ## Componenti
 
 | File | Responsabilità |
 | --- | --- |
-| `src/uefi.hpp` | Tipi, tabelle e protocolli UEFI minimi |
-| `src/font.hpp` | Font bitmap 5x7 incorporato |
-| `src/kernel.cpp` | Bootstrap, seriale, memoria e framebuffer |
-| `scripts/build.sh` | Compilazione PE/COFF |
-| `scripts/make_image.py` | Disco MBR/FAT32 riproducibile senza tool esterni |
-| `scripts/run.sh` | Avvio del PC virtuale QEMU/OVMF |
+| `src/uefi.hpp` | Tipi e protocolli UEFI minimi |
+| `src/font.hpp` | Font bitmap 5×7 incorporato |
+| `src/kernel.cpp` | Boot, IRQ, driver, console e shell |
+| `scripts/build.sh` | Compilazione PE/COFF freestanding |
+| `scripts/make_image.py` | Disco MBR/FAT32 riproducibile |
+| `scripts/run.sh` | Macchina QEMU con firmware OVMF |
 
-## Limitazioni intenzionali della 1.0
+## Limiti intenzionali
 
-anOS 1.0 è il primo milestone tecnico: non possiede ancora interrupt propri,
-scheduler, allocatore dinamico, filesystem montato o driver per tastiera. Questi
-elementi formeranno i milestone successivi senza cambiare il confine
-freestanding già stabilito.
+La shell gira ancora in ring 0 ed è parte del kernel. Non esistono ancora
+isolamento dei processi, heap dinamico, filesystem montato o programmi esterni.
+Questi confini sono il prossimo passaggio architetturale.
+

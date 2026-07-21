@@ -1,34 +1,31 @@
-# anOS 1.0
+# anOS 1.1
 
-Primo sistema operativo sperimentale del progetto anSofts: kernel x86-64
-freestanding avviabile su firmware UEFI.
+Sistema operativo sperimentale x86-64 del progetto anSofts. anOS 1.1 aggiunge
+interrupt hardware, timer, tastiera PS/2 e una shell grafica interattiva al
+kernel UEFI freestanding introdotto con anOS 1.0.
 
-La versione 1.0 individua il framebuffer e la memoria tramite UEFI, chiama
-`ExitBootServices()`, quindi continua senza un sistema operativo sottostante e
-disegna direttamente la propria schermata. QEMU viene usato esclusivamente come
-PC virtuale di prova.
+Il kernel ottiene framebuffer e mappa della memoria tramite UEFI, chiama
+`ExitBootServices()` e prosegue senza un sistema operativo sottostante. Da quel
+momento gestisce direttamente IDT, PIC 8259, PIT, controller PS/2 e framebuffer.
 
-## Requisiti
+## Novità della versione 1.1
 
-- Windows 10/11 con WSL2 e Ubuntu;
-- supporto WSLg per vedere la finestra grafica;
-- circa 1 GB libero per toolchain e build.
+- IDT x86-64 installata dal kernel;
+- PIC rimappato: IRQ0 → vettore 32, IRQ1 → vettore 33;
+- timer PIT programmato a 100 Hz;
+- tastiera PS/2 interrupt-driven, con Shift, Caps Lock, Invio e Backspace;
+- ring buffer per separare IRQ e shell;
+- console grafica con scorrimento;
+- shell interattiva e primi comandi;
+- conteggio RAM corretto, senza includere MMIO e memoria runtime.
 
-## Preparazione su Windows
+## Preparazione su Windows/WSL2
 
-Aprire PowerShell come amministratore, se WSL non è già installato:
-
-```powershell
-wsl --install -d Ubuntu
-```
-
-Riavviare se richiesto, aprire Ubuntu e raggiungere la cartella del progetto.
-Per un percorso Windows, ad esempio:
+Da Ubuntu, nella cartella del progetto:
 
 ```bash
-cd /mnt/c/Users/Anthony/source/repos/anOS-1.0
 chmod +x scripts/*.sh
-./scripts/setup-wsl.sh
+bash scripts/setup-wsl.sh
 ```
 
 ## Compilazione e avvio
@@ -39,48 +36,53 @@ make run
 
 Vengono prodotti:
 
-- `build/BOOTX64.EFI`: applicazione/kernel UEFI;
-- `build/anOS-1.0.img`: immagine FAT32 avviabile;
+- `build/BOOTX64.EFI`: kernel UEFI;
+- `build/anOS-1.1.img`: disco MBR/FAT32 avviabile;
 - `build/esp/`: contenuto della EFI System Partition.
 
-Per il solo log seriale, senza finestra grafica:
+Se WSLg è già configurato, QEMU apre automaticamente la finestra grafica. Il
+terminale ospitante mostra contemporaneamente il log seriale del kernel.
 
-```bash
-make run-headless
-```
+## Primi comandi
 
-Il log corretto comprende:
+| Comando | Funzione |
+| --- | --- |
+| `help` | Mostra l'elenco integrato |
+| `about` | Informazioni su anOS |
+| `version` | Versione e architettura del kernel |
+| `clear` / `cls` | Pulisce la console |
+| `echo TESTO` | Stampa il testo indicato |
+| `mem` | Mostra la RAM utilizzabile |
+| `uptime` | Secondi trascorsi dal boot |
+| `ticks` | Numero di interrupt PIT ricevuti |
+| `irq` | Contatori IRQ0 e IRQ1 |
+| `cpu` | Vendor della CPU tramite CPUID |
+| `color cyan` | Testo ciano; anche `green`, `white`, `amber` |
+| `reboot` | Riavvia la macchina tramite controller 8042 |
+| `halt` | Disabilita gli interrupt e arresta la CPU |
 
-```text
-anOS 1.0: ingresso UEFI
-anOS 1.0: ExitBootServices OK, kernel autonomo
-anOS 1.0: framebuffer disegnato, arresto CPU
-```
+La mappatura corrente della tastiera segue lo scancode set 1 in layout US. Le
+lettere di una tastiera italiana coincidono; la localizzazione dei simboli sarà
+aggiunta in una versione successiva.
 
-QEMU rimane aperto perché il kernel arresta intenzionalmente la CPU; chiuderlo
-con `Ctrl+C` nel terminale.
-
-## Verifica statica
+## Controlli
 
 ```bash
 make check
 ```
 
-## Pulizia
+## Prossimi milestone
 
-```bash
-make clean
-```
+1. gestore delle eccezioni CPU e schermata panic;
+2. allocatore di pagine e heap del kernel;
+3. paging proprietario e processi ring 3;
+4. filesystem e loader ELF64;
+5. syscall e SDK applicativo C/C++;
+6. mouse, audio e libreria grafica 2D;
+7. primo gioco nativo anOS.
 
-## Roadmap
-
-1. IDT, interrupt e timer;
-2. allocatore della memoria fisica;
-3. input da tastiera;
-4. console e shell interattiva;
-5. filesystem e caricamento programmi;
-6. processi user-mode e scheduler;
-7. rete e interfaccia grafica evoluta.
+La strategia per programmi e giochi è descritta in
+`docs/PROGRAMMING-ROADMAP.md`.
 
 ## Licenza
 

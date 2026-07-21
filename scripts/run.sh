@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="$ROOT_DIR/build"
-IMAGE_FILE="$BUILD_DIR/anOS-1.0.img"
+IMAGE_FILE="$BUILD_DIR/anOS-1.1.img"
 HEADLESS="${1:-}"
 
 if ! command -v qemu-system-x86_64 >/dev/null 2>&1; then
